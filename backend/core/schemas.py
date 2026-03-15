@@ -17,3 +17,7 @@ class ClientResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ClientUpdate(ClientCreate):
+    pass
