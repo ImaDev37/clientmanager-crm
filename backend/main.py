@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from .db.database import AsyncSessionLocal
 from .core import crud, schemas, models
@@ -20,21 +20,19 @@ async def root():
 
 @app.get("/clients", response_model=list[schemas.ClientResponse])
 async def list_clients(db: AsyncSession = Depends(get_db)):
-    clients = await crud.get_clients(db)
-    return clients
+    return await crud.get_clients(db)
 
 
 @app.post("/clients", response_model=schemas.ClientResponse)
 async def create_client(client: schemas.ClientCreate, db: AsyncSession = Depends(get_db)):
-    new_client = await crud.create_client(db, client)
-    return new_client
+    return await crud.create_client(db, client)
 
 
 @app.get("/clients/{client_id}", response_model=schemas.ClientResponse)
 async def get_client(client_id: int, db: AsyncSession = Depends(get_db)):
     client = await crud.get_client_by_id(db, client_id)
     if not client:
-        return {"error": "Client not found"}
+        raise HTTPException(status_code=404, detail="Client not found")
     return client
 
 
@@ -42,16 +40,16 @@ async def get_client(client_id: int, db: AsyncSession = Depends(get_db)):
 async def update_client_endpoint(client_id: int, client: schemas.ClientUpdate, db: AsyncSession = Depends(get_db)):
     updated_client = await crud.update_client(db, client_id, client)
     if not updated_client:
-        return {"error": "Client not found"}
+        raise HTTPException(status_code=404, detail="Client not found")
     return updated_client
 
 
-@app.delete("/clients/{client_id}", response_model=schemas.ClientResponse)
+@app.delete("/clients/{client_id}")
 async def delete_client_endpoint(client_id: int, db: AsyncSession = Depends(get_db)):
     deleted_client = await crud.delete_client(db, client_id)
     if not deleted_client:
-        return {"error": "Client not found"}
-    return deleted_client
+        raise HTTPException(status_code=404, detail="Client not found")
+    return {"message": "Client deleted"}
 
 
 @app.get("/clients/count", response_model=int)

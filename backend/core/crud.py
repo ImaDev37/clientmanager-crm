@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from .models import Client
-from .schemas import ClientCreate
+from .schemas import ClientCreate, ClientUpdate
 
 
 async def get_clients(db: AsyncSession):
@@ -26,22 +26,27 @@ async def get_client_by_id(db: AsyncSession, client_id: int):
     return result.scalar_one_or_none()
 
 
-async def update_client(db: AsyncSession, client_id: int, client: ClientCreate):
+async def update_client(db: AsyncSession, client_id: int, client: ClientUpdate):
     db_client = await get_client_by_id(db, client_id)
-    if db_client:
-        db_client.name = client.name
-        db_client.email = client.email
-        db_client.phone = client.phone
-        await db.commit()
-        await db.refresh(db_client)
+    if not db_client:
+        return None
+
+    db_client.name = client.name
+    db_client.email = client.email
+    db_client.phone = client.phone
+
+    await db.commit()
+    await db.refresh(db_client)
     return db_client
 
 
 async def delete_client(db: AsyncSession, client_id: int):
     db_client = await get_client_by_id(db, client_id)
-    if db_client:
-        await db.delete(db_client)
-        await db.commit()
+    if not db_client:
+        return None
+
+    await db.delete(db_client)
+    await db.commit()
     return db_client
 
 
